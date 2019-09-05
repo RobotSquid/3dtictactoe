@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>tic_tac_toe</title>
+</head>
+<body style="margin:0 0 0 0" id="body">
+<canvas id="canvas" width="100%" height="100%"></canvas>
+<script>
+var c = document.getElementById("canvas");
+var g = c.getContext("2d");
+c.width = window.innerWidth-50;
+c.height = window.innerHeight-50;
+const dof = 400;
+const caz = 4;
+const cay = 0.2;
+const ox = -650;
+const oy = 280;
+const sze = 30;
+var board = [];
+var adown = false;
+var ddown = false;
+var rot = 0;
+var selx = 0;
+var sely = 0;
+var selz = 0;
+var turn = 1;
+var xs = 0;
+var os = 0;
+for (i = 0; i < 4; i++) {
+	board.push([]);
+	for (j = 0; j < 4; j++) {
+		board[i].push([]);
+		for (k = 0; k < 4; k++) {
+			board[i][j].push(0);
+		}
+	}
+}
+function p2d(x, y) {
+	this.x = x;
+	this.y = y;
+}
+function toscr(x, y, z) {
+	var nx = x*Math.cos(rot)-z*Math.sin(rot);
+	var nz = x*Math.sin(rot)+z*Math.cos(rot);
+	var fx = (nx/(nz+caz))*dof;
+	var fy = ((y-cay)/(nz+caz))*dof;
+	return new p2d(fx, fy);
+}
+function dist(x, y, z) {
+	var nz = x*Math.sin(rot)+z*Math.cos(rot);
+	return -nz+caz;
+}
+function line(p1, p2, col = "black") {
+	g.lineWidth = 2;
+	g.beginPath();
+	g.strokeStyle = col;
+	g.moveTo(c.width/2+p1.x, c.height/2-p1.y);
+	g.lineTo(c.width/2+p2.x, c.height/2-p2.y);
+	g.stroke();
+	g.closePath();
+}
+function text(p, d, t) {
+	g.fillStyle = "black";
+	g.textBaseline = "middle"; 
+	g.textAlign = "center"; 
+	g.font = "" + d*(80/caz) + "px Courier New";
+	g.fillText(t, c.width/2+p.x, c.height/2-p.y); 
+}
+function rect(p1, p2, p3, p4) {
+	g.lineWidth = 0;
+	g.beginPath();
+	g.fillStyle = "pink";
+	g.moveTo(c.width/2+p1.x, c.height/2-p1.y);
+	g.lineTo(c.width/2+p2.x, c.height/2-p2.y);
+	g.lineTo(c.width/2+p3.x, c.height/2-p3.y);
+	g.lineTo(c.width/2+p4.x, c.height/2-p4.y);
+	g.closePath();
+	g.fill();
+}
+document.onkeydown = function (e) {
+    e = e || window.event;
+    if (e.keyCode == 37) adown = true;
+	if (e.keyCode == 39) ddown = true;
+	if ((e.keyCode == 68) && (selx < 1)) selx ++;
+	if ((e.keyCode == 65) && (selx > -2)) selx --;
+	if ((e.keyCode == 87) && (selz < 1)) selz ++;
+	if ((e.keyCode == 83) && (selz > -2)) selz --;
+	if ((e.keyCode == 81) && (sely < 1)) sely ++;
+	if ((e.keyCode == 69) && (sely > -2)) sely --;
+	if (e.keyCode == 32) place();
+};
+document.onkeyup = function (e) {
+    e = e || window.event;
+    if (e.keyCode == 37) adown = false;
+	if (e.keyCode == 39) ddown = false;
+};
+function place() {
+	if (board[selx+2][sely+2][selz+2] == 0) {
+		board[selx+2][sely+2][selz+2] = turn;
+		check();
+		turn = -turn;
+	}
+}
+function valid(x, y, z) {
+	return (x <= 3) && (x >= 0) && (y <= 3) && (y >= 0) && (z <= 3) && (z >= 0);
+}
+function check() {
+	var gc = 0;
+	for (di = -1; di < 2; di++) {
+		for (dj = -1; dj < 2; dj++) {
+			for (dk = -1; dk < 2; dk++) {
+				if (!((di == 0) && (dj == 0) && (dk == 0))) {
+					var ix = selx+2;
+					var iy = sely+2;
+					var iz = selz+2;
+					while (valid(ix, iy, iz)) {
+						ix -= di;
+						iy -= dj;
+						iz -= dk;
+					}
+					var count = 0;
+					ix += di;
+					iy += dj;
+					iz += dk;
+					while (valid(ix, iy, iz)) {
+						if (board[ix][iy][iz] == turn) count++;
+						ix += di;
+						iy += dj;
+						iz += dk;
+					}
+					console.log(count);
+					if (count == 4) gc++;
+				}
+			}
+		}
+	}
+	gc /= 2;
+	if (turn == 1) xs+=gc;
+	if (turn == -1) os+=gc;	
+}
+function update(time) {
+	g.fillStyle = "white";
+	g.fillRect(0, 0, c.width, c.height);
+	if (adown) rot += 0.01;
+	if (ddown) rot -= 0.01;
+	rect(toscr(selx, sely, selz), toscr(selx, sely+1, selz), toscr(selx, sely+1, selz+1), toscr(selx, sely, selz+1));
+	rect(toscr(selx, sely, selz), toscr(selx+1, sely, selz), toscr(selx+1, sely, selz+1), toscr(selx, sely, selz+1));
+	rect(toscr(selx, sely, selz), toscr(selx+1, sely, selz), toscr(selx+1, sely+1, selz), toscr(selx, sely+1, selz));
+	rect(toscr(selx+1, sely+1, selz+1), toscr(selx+1, sely, selz+1), toscr(selx+1, sely, selz), toscr(selx+1, sely+1, selz));
+	rect(toscr(selx+1, sely+1, selz+1), toscr(selx, sely+1, selz+1), toscr(selx, sely+1, selz), toscr(selx+1, sely+1, selz));
+	rect(toscr(selx+1, sely+1, selz+1), toscr(selx, sely+1, selz+1), toscr(selx, sely, selz+1), toscr(selx+1, sely, selz+1));
+	
+	rect(new p2d(ox+((selx+2)*sze), oy-((1-sely)*sze*5)-((1-selz)*sze)), new p2d(ox+((selx+3)*sze), oy-((1-sely)*sze*5)-((1-selz)*sze)), new p2d(ox+((selx+3)*sze), oy-((1-sely)*sze*5)-((2-selz)*sze)), new p2d(ox+((selx+2)*sze), oy-((1-sely)*sze*5)-((2-selz)*sze)));
+	
+	line(toscr(0, -3, -1), toscr(0, -3, 1), "gray");
+	line(toscr(-0.5, -3, 0.5), toscr(0, -3, 1), "gray");
+	line(toscr(0, -3, 1), toscr(0.5, -3, 0.5), "gray");
+	
+	line(new p2d(590, 280), new p2d(590, -280));
+	line(new p2d(560, 250), new p2d(620, 250));
+	text(new p2d(575, 265), 1, "X");
+	text(new p2d(605, 265), 1, "O");
+	for (i = 0; i < xs; i++) {
+		text(new p2d(575, 235-i*sze), 1, "I");
+	}
+	for (i = 0; i < os; i++) {
+		text(new p2d(605, 235-i*sze), 1, "I");
+	}
+	for (i = -1; i < 2; i++) {
+		for (j = -1; j < 2; j++) {
+			line(toscr(i, j, -2), toscr(i, j, 2));
+		}
+	}
+	for (i = -1; i < 2; i++) {
+		for (j = -1; j < 2; j++) {
+			line(toscr(-2, j, i), toscr(2, j, i));
+		}
+	}
+	for (i = -1; i < 2; i++) {
+		for (j = -1; j < 2; j++) {
+			line(toscr(i, -2, j), toscr(i, 2, j));
+		}
+	}
+	for (i = 0; i < 4; i++) {
+		for (k = 1; k < 4; k++) {
+			line(new p2d(ox+(k*sze), oy-(i*sze*5)), new p2d(ox+(k*sze), oy-(i*sze*5)-(4*sze)));
+		}
+		for (k = 1; k < 4; k++) {
+			line(new p2d(ox, oy-(i*sze*5)-(k*sze)), new p2d(ox+(4*sze), oy-(i*sze*5)-(k*sze)));
+		}
+	}
+	for (i = 0; i < 4; i++) {
+		for (j = 0; j < 4; j++) {
+			for (k = 0; k < 4; k++) {
+				if (board[i][j][k] == -1) text(toscr(i-1.5, j-1.5, k-1.5), dist(i-1.5, j-1.5, k-1.5), "O");
+				if (board[i][j][k] == 1) text(toscr(i-1.5, j-1.5, k-1.5), dist(i-1.5, j-1.5, k-1.5), "X");
+				if (board[i][j][k] == -1) text(new p2d(ox+(i+0.5)*sze, oy-((3-j)*sze*5)-((3-k)+0.5)*sze),1, "O");
+				if (board[i][j][k] == 1) text(new p2d(ox+(i+0.5)*sze, oy-((3-j)*sze*5)-((3-k)+0.5)*sze),1,  "X");
+			}
+		}
+	}
+	
+	text(new p2d(0, 320), 2, "Next to play: " + (turn == 1 ? "X" : "O"))
+	window.requestAnimationFrame(update);
+}
+window.requestAnimationFrame(update);
+</script>
+</body>
+</html>
